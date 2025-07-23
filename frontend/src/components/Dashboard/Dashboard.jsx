@@ -1,7 +1,7 @@
 import React from 'react'
 import { useQuery } from 'react-query'
 import { dashboardService } from '../../services/dashboard'  // ← Named import should now work
-import StatsCard from './StatsCard'
+import { StatsCard } from './StatsCard'
 import ApplicationChart from './ApplicationChart'
 import RecentApplications from './RecentApplications'
 import PlatformStatus from './PlatformStatus'
