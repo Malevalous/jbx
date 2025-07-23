@@ -1,0 +1,19 @@
+# Save as install-extensions.sh
+code --install-extension ms-vscode-remote.remote-containers
+code --install-extension ms-azuretools.vscode-docker
+code --install-extension dsznajder.es7-react-js-snippets
+code --install-extension dbaeumer.vscode-eslint
+code --install-extension esbenp.prettier-vscode
+code --install-extension planbcoding.vscode-react-refactor
+code --install-extension antmdvs.vscode-react-hooks-snippets
+code --install-extension ms-python.python
+code --install-extension ms-python.vscode-pylance
+code --install-extension likhithd.fastapi-snippets-extension
+code --install-extension mongodb.mongodb-vscode
+code --install-extension ms-ossdata.vscode-postgresql
+code --install-extension eamodio.gitlens
+code --install-extension donjayamanne.githistory
+code --install-extension streetsidesoftware.code-spell-checker
+code --install-extension rangav.vscode-thunder-client
+code --install-extension redhat.vscode-yaml
+code --install-extension mikestead.dotenv
