@@ -73,5 +73,4 @@ export const applicationsService = {
     }
   }
 }
-
 export default applicationsService
