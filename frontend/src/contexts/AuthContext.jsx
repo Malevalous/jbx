@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
     if (token) {
       authService.validateToken(token)
         .then(userData => {
-          setUser(userData)
+          setUser(userData.user || userData)
         })
         .catch(() => {
           localStorage.removeItem('token')
@@ -30,21 +30,53 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = async (email, password) => {
-    const { user, token } = await authService.login(email, password)
-    localStorage.setItem('token', token)
-    setUser(user)
-    return user
+    try {
+      const response = await authService.login(email, password)
+      const { user, token } = response
+      
+      if (token) {
+        localStorage.setItem('token', token)
+      }
+      
+      setUser(user)
+      return user
+    } catch (error) {
+      throw error
+    }
   }
 
-  const logout = () => {
-    localStorage.removeItem('token')
-    setUser(null)
+  const register = async (name, email, password) => {
+    try {
+      const response = await authService.register(name, email, password)
+      const { user, token } = response
+      
+      if (token) {
+        localStorage.setItem('token', token)
+      }
+      
+      setUser(user)
+      return user
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await authService.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      localStorage.removeItem('token')
+      setUser(null)
+    }
   }
 
   const value = {
     user,
     loading,
     login,
+    register,
     logout
   }
 

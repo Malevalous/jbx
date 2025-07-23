@@ -1,6 +1,6 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
+import AuthProvider, { useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import Login from './components/Auth/Login'
 import Register from './components/Auth/Register'
@@ -24,38 +24,40 @@ function ProtectedRoute({ children }) {
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Layout>
-              <Dashboard />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/applications" element={
-          <ProtectedRoute>
-            <Layout>
-              <Applications />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/platforms" element={
-          <ProtectedRoute>
-            <Layout>
-              <Platforms />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <Layout>
-              <Settings />
-            </Layout>
-          </ProtectedRoute>
-        } />
-      </Routes>
+      <div className="App">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout>
+                <Dashboard />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/applications" element={
+            <ProtectedRoute>
+              <Layout>
+                <Applications />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/platforms" element={
+            <ProtectedRoute>
+              <Layout>
+                <Platforms />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Layout>
+                <Settings />
+              </Layout>
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </div>
     </AuthProvider>
   )
 }
