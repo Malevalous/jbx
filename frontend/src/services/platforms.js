@@ -49,16 +49,6 @@ export const platformsService = {
       console.error('Error disabling platform:', error)
       throw new Error('Failed to disable platform')
     }
-  },
-
-  async getPlatformStats(platformId, period = '7d') {
-    try {
-      const response = await api.get(`/platforms/${platformId}/stats?period=${period}`)
-      return response.data
-    } catch (error) {
-      console.error('Error fetching platform stats:', error)
-      throw new Error('Failed to fetch platform statistics')
-    }
   }
 }
 

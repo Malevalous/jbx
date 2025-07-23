@@ -1,12 +1,13 @@
 {
   "name": "jbx-frontend",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext js,jsx --fix",
     "preview": "vite preview",
     "test": "vitest"
   },
@@ -23,7 +24,9 @@
     "chart.js": "^4.4.3",
     "react-chartjs-2": "^5.2.0",
     "date-fns": "^3.6.0",
-    "clsx": "^2.1.1"
+    "clsx": "^2.1.1",
+    "react-hot-toast": "^2.4.1",
+    "framer-motion": "^11.3.28"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",

@@ -91,4 +91,3 @@ function PlatformStatus({ platforms }) {
 
 // Add default export
 export default PlatformStatus
-export { PlatformStatus }

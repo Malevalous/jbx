@@ -75,4 +75,3 @@ export const applicationsService = {
 }
 
 export default applicationsService
-export { applicationsService } 

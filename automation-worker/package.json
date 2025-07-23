@@ -9,8 +9,9 @@
     "test": "jest"
   },
   "dependencies": {
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "playwright": "^1.40.0",
-    "playwright-stealth": "^1.0.6",
     "amqplib": "^0.10.3",
     "redis": "^4.6.11",
     "winston": "^3.3.3",

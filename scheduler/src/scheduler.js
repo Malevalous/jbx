@@ -327,8 +327,8 @@ class JobScheduler {
         return 'closed'
       }
 
-      const appliedText = await page.$text='Applied'
-      if (appliedText) {
+      const appliedText = await page.locator('text=Applied').first()
+      if (await appliedText.count() > 0) {
         return 'applied'
       }
 

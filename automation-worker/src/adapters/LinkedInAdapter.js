@@ -8,7 +8,10 @@ class LinkedInAdapter extends BasePlatformAdapter {
 
   async login() {
     try {
-      await this.page.goto(`${this.baseUrl}/login`, { waitUntil: 'networkidle' })
+      await this.page.goto(`${this.baseUrl}/login`, { 
+        waitUntil: 'networkidle',
+        timeout: 30000 
+      })
       
       // Fill in credentials
       await this.page.fill('#username', this.credentials.email)
@@ -19,18 +22,22 @@ class LinkedInAdapter extends BasePlatformAdapter {
       
       // Click login button
       await Promise.all([
-        this.page.waitForNavigation({ waitUntil: 'networkidle' }),
+        this.page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }),
         this.page.click('button[type="submit"]')
       ])
 
       // Check if we need to handle 2FA or verification
       const currentUrl = this.page.url()
-      if (currentUrl.includes('challenge')) {
+      if (currentUrl.includes('challenge') || currentUrl.includes('checkpoint')) {
         throw new Error('LinkedIn requires additional verification')
       }
 
       // Verify we're logged in
-      await this.page.waitForSelector('[data-test-id="nav-primary-member-menu-trigger"]', { timeout: 10000 })
+      await this.page.waitForSelector('[data-test-id="nav-primary-member-menu-trigger"]', { 
+        timeout: 10000 
+      })
+      
+      return { success: true, message: 'Successfully logged into LinkedIn' }
       
     } catch (error) {
       throw new Error(`LinkedIn login failed: ${error.message}`)
@@ -40,7 +47,12 @@ class LinkedInAdapter extends BasePlatformAdapter {
   async applyToJob(jobDetails) {
     try {
       // Navigate to job posting
-      await this.page.goto(jobDetails.url, { waitUntil: 'networkidle' })
+      await this.page.goto(jobDetails.url, { 
+        waitUntil: 'networkidle',
+        timeout: 30000 
+      })
+      
+      await this.waitForRandomDelay(2000, 4000)
       
       // Check if Easy Apply is available
       const easyApplyButton = await this.page.$('button[aria-label*="Easy Apply"]')
@@ -65,7 +77,7 @@ class LinkedInAdapter extends BasePlatformAdapter {
         await this.fillApplicationForm()
         
         // Look for Next or Submit button
-        const nextButton = await this.page.$('button[aria-label="Continue"], button[aria-label="Submit application"]')
+        const nextButton = await this.page.$('button[aria-label="Continue"], button[aria-label="Submit application"], button:has-text("Submit")')
         if (!nextButton) break
 
         const buttonText = await nextButton.textContent()
@@ -73,7 +85,9 @@ class LinkedInAdapter extends BasePlatformAdapter {
         if (buttonText.toLowerCase().includes('submit')) {
           // Final submission
           await nextButton.click()
-          await this.page.waitForSelector('[data-test-id="application-submitted"]', { timeout: 10000 })
+          await this.page.waitForSelector('[data-test-id="application-submitted"], .artdeco-inline-feedback--success', { 
+            timeout: 10000 
+          })
           break
         } else {
           // Continue to next step
@@ -96,7 +110,7 @@ class LinkedInAdapter extends BasePlatformAdapter {
   }
 
   async fillApplicationForm() {
-    // Fill common form fields
+    // Fill common form fields if they exist
     const formFields = [
       { selector: 'input[name="phoneNumber"]', value: this.credentials.phone },
       { selector: 'input[name="firstName"]', value: this.credentials.firstName },
@@ -104,29 +118,27 @@ class LinkedInAdapter extends BasePlatformAdapter {
     ]
 
     for (const field of formFields) {
-      const element = await this.page.$(field.selector)
-      if (element && field.value) {
-        await element.clear()
-        await this.humanTypeText(element, field.value)
+      try {
+        const element = await this.page.$(field.selector)
+        if (element && field.value) {
+          await element.fill('')
+          await this.humanTypeText(element, field.value)
+        }
+      } catch (error) {
+        // Continue if field doesn't exist
+        continue
       }
     }
 
     // Handle file uploads (resume)
-    const resumeUpload = await this.page.$('input[type="file"]')
-    if (resumeUpload && this.credentials.resumePath) {
-      await resumeUpload.setInputFiles(this.credentials.resumePath)
-      await this.waitForRandomDelay(2000, 4000)
-    }
-
-    // Handle dropdown selections
-    const dropdowns = await this.page.$$('select')
-    for (const dropdown of dropdowns) {
-      const options = await dropdown.$$('option')
-      if (options.length > 1) {
-        // Select a random option (excluding the first which is usually empty)
-        const randomIndex = Math.floor(Math.random() * (options.length - 1)) + 1
-        await dropdown.selectOption({ index: randomIndex })
+    try {
+      const resumeUpload = await this.page.$('input[type="file"]')
+      if (resumeUpload && this.credentials.resumePath) {
+        await resumeUpload.setInputFiles(this.credentials.resumePath)
+        await this.waitForRandomDelay(2000, 4000)
       }
+    } catch (error) {
+      // Resume upload is optional
     }
 
     await this.waitForRandomDelay()

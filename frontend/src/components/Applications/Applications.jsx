@@ -7,9 +7,10 @@ import ApplicationDetails from './ApplicationDetails'
 
 export default function Applications() {
   const [filters, setFilters] = useState({
-    platform: '',
-    status: '',
-    dateRange: '7d'
+    platform: 'all',
+    status: 'all',
+    dateRange: '30d',
+    search: ''
   })
   const [selectedApplication, setSelectedApplication] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -61,9 +62,7 @@ export default function Applications() {
           </div>
           
           <div className="lg:col-span-1">
-            {selectedApplication && (
-              <ApplicationDetails application={selectedApplication} />
-            )}
+            <ApplicationDetails application={selectedApplication} />
           </div>
         </div>
       )}
