@@ -1,11 +1,13 @@
 const { chromium } = require('playwright')
-const stealth = require('playwright-stealth')
 const amqp = require('amqplib')
-const redis = require('redis')
+const Redis = require('ioredis')
 const winston = require('winston')
 const UserAgent = require('user-agents')
 require('dotenv').config()
 
+const { chromium } = require('playwright-extra')
+const stealth = require('puppeteer-extra-plugin-stealth')()
+// Import platform adapters
 const LinkedInAdapter = require('./adapters/LinkedInAdapter')
 const IndeedAdapter = require('./adapters/IndeedAdapter')
 const NaukriAdapter = require('./adapters/NaukriAdapter')
@@ -14,16 +16,26 @@ const GlassdoorAdapter = require('./adapters/GlassdoorAdapter')
 
 // Setup logging
 const logger = winston.createLogger({
-  level: 'info',
+  level: process.env.LOG_LEVEL || 'info',
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
     winston.format.json()
   ),
   transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'logs/worker-error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/worker.log' })
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    }),
+    new winston.transports.File({ 
+      filename: 'logs/worker-error.log', 
+      level: 'error' 
+    }),
+    new winston.transports.File({ 
+      filename: 'logs/worker.log' 
+    })
   ]
 })
 
@@ -33,7 +45,7 @@ class AutomationWorker {
     this.page = null
     this.rabbitConnection = null
     this.rabbitChannel = null
-    this.redisClient = null
+    this.redis = null
     this.adapters = new Map()
     this.isProcessing = false
     
@@ -50,18 +62,30 @@ class AutomationWorker {
 
   async initialize() {
     try {
+      logger.info('Initializing automation worker...')
+      
       // Setup Redis
-      this.redisClient = redis.createClient({
-        url: process.env.REDIS_URL || 'redis://localhost:6379'
+      this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+        retryDelayOnFailover: 100,
+        enableReadyCheck: false,
+        maxRetriesPerRequest: null,
       })
-      await this.redisClient.connect()
-      logger.info('Redis connected')
+      
+      this.redis.on('connect', () => {
+        logger.info('Redis connected')
+      })
+      
+      this.redis.on('error', (err) => {
+        logger.error('Redis error:', err)
+      })
 
       // Setup RabbitMQ
       this.rabbitConnection = await amqp.connect(process.env.RABBITMQ_URL || 'amqp://localhost')
       this.rabbitChannel = await this.rabbitConnection.createChannel()
       
       await this.rabbitChannel.assertQueue('job_applications', { durable: true })
+      await this.rabbitChannel.prefetch(1) // Process one job at a time
+      
       logger.info('RabbitMQ connected')
 
       // Setup browser
@@ -71,6 +95,7 @@ class AutomationWorker {
       // Start consuming messages
       await this.startConsuming()
       
+      logger.info('Automation worker initialized successfully')
     } catch (error) {
       logger.error('Failed to initialize worker:', error)
       process.exit(1)
@@ -78,12 +103,8 @@ class AutomationWorker {
   }
 
   async setupBrowser() {
-    const proxyUrl = process.env.PROXY_URL
-    const userAgent = new UserAgent()
-
     this.browser = await chromium.launch({
       headless: process.env.NODE_ENV === 'production',
-      proxy: proxyUrl ? { server: proxyUrl } : undefined,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -92,37 +113,61 @@ class AutomationWorker {
         '--no-first-run',
         '--no-zygote',
         '--disable-gpu',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding'
       ]
     })
 
     const context = await this.browser.newContext({
-      userAgent: userAgent.toString(),
-      viewport: { width: 1366, height: 768 },
-      locale: 'en-US',
-      timezoneId: 'America/New_York'
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        viewport: { width: 1366, height: 768 },
+        locale: 'en-US',
+        timezoneId: 'America/New_York'
     })
 
     this.page = await context.newPage()
-    await stealth(this.page)
 
-    // Random mouse movements to appear human-like
-    await this.page.mouse.move(100, 100)
-    await this.page.waitForTimeout(1000)
+    // Add stealth techniques
+    await this.page.addInitScript(() => {
+      // Remove webdriver property
+      Object.defineProperty(navigator, 'webdriver', {
+        get: () => undefined,
+      })
+
+      // Mock languages and plugins
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['en-US', 'en'],
+      })
+
+      Object.defineProperty(navigator, 'plugins', {
+        get: () => [1, 2, 3, 4, 5],
+      })
+
+      // Hide automation indicators
+    Object.defineProperty(navigator, 'permissions', {
+      get: () => ({
+        query: () => Promise.resolve({ state: 'granted' })
+        
+      })
+    })
+
+    // Random mouse movements
+    // (This should not be inside addInitScript, move it outside)
+    // The following code should be outside the addInitScript function
+    })
+
+    await this.page.mouse.move(
+      Math.floor(Math.random() * 100) + 100,
+      Math.floor(Math.random() * 100) + 100
+    )
   }
 
   async startConsuming() {
-    await this.rabbitChannel.prefetch(1) // Process one job at a time
-    
     await this.rabbitChannel.consume('job_applications', async (msg) => {
       if (msg && !this.isProcessing) {
         this.isProcessing = true
         
         try {
           const jobData = JSON.parse(msg.content.toString())
-          logger.info(`Processing job application: ${jobData.jobId}`)
+          logger.info(`Processing job application: ${jobData.jobId || 'unknown'}`)
           
           await this.processJobApplication(jobData)
           this.rabbitChannel.ack(msg)
@@ -136,7 +181,7 @@ class AutomationWorker {
           // Random delay between applications (30-180 seconds)
           const delay = Math.random() * (180000 - 30000) + 30000
           logger.info(`Waiting ${Math.round(delay/1000)} seconds before next application`)
-          await this.page.waitForTimeout(delay)
+          await this.sleep(delay)
         }
       }
     })
@@ -152,7 +197,7 @@ class AutomationWorker {
       await this.checkRateLimit(platform)
       
       // Get platform adapter
-      const adapter = this.adapters.get(platform)
+      const adapter = this.adapters.get(platform.toLowerCase())
       if (!adapter) {
         throw new Error(`Unsupported platform: ${platform}`)
       }
@@ -190,70 +235,57 @@ class AutomationWorker {
   }
 
   async checkRateLimit(platform) {
-    const key = `rate_limit:${platform}`
-    const count = await this.redisClient.get(key)
+    const key = `rate_limit:${platform.toLowerCase()}`
+    const count = await this.redis.get(key)
     
     if (count && parseInt(count) >= 5) { // Max 5 applications per platform per hour
       throw new Error(`Rate limit exceeded for ${platform}`)
     }
     
-    await this.redisClient.incr(key)
-    await this.redisClient.expire(key, 3600) // 1 hour expiry
+    await this.redis.incr(key)
+    await this.redis.expire(key, 3600) // 1 hour expiry
   }
 
   async storeResult(jobId, result) {
     const key = `job_result:${jobId}`
-    await this.redisClient.setex(key, 3600, JSON.stringify(result)) // 1 hour expiry
+    await this.redis.setex(key, 3600, JSON.stringify(result)) // 1 hour expiry
+  }
+
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
   }
 
   async cleanup() {
-    if (this.page) await this.page.close()
-    if (this.browser) await this.browser.close()
-    if (this.rabbitChannel) await this.rabbitChannel.close()
-    if (this.rabbitConnection) await this.rabbitConnection.close()
-    if (this.redisClient) await this.redisClient.quit()
+    logger.info('Starting worker cleanup...')
+    
+    if (this.page) {
+      await this.page.close()
+    }
+    
+    if (this.browser) {
+      await this.browser.close()
+    }
+    
+    if (this.rabbitChannel) {
+      await this.rabbitChannel.close()
+    }
+    
+    if (this.rabbitConnection) {
+      await this.rabbitConnection.close()
+    }
+    
+    if (this.redis) {
+      await this.redis.quit()
+    }
     
     logger.info('Worker cleanup completed')
-  }
-}
-
-// Platform adapters base class
-class BasePlatformAdapter {
-  constructor() {
-    this.page = null
-    this.credentials = null
-  }
-
-  initialize(page, credentials) {
-    this.page = page
-    this.credentials = credentials
-  }
-
-  async login() {
-    throw new Error('Login method must be implemented by platform adapter')
-  }
-
-  async applyToJob(jobDetails) {
-    throw new Error('ApplyToJob method must be implemented by platform adapter')
-  }
-
-  async waitForRandomDelay(min = 1000, max = 3000) {
-    const delay = Math.random() * (max - min) + min
-    await this.page.waitForTimeout(delay)
-  }
-
-  async humanTypeText(element, text, delay = 100) {
-    for (let i = 0; i < text.length; i++) {
-      await element.type(text[i])
-      await this.page.waitForTimeout(delay + Math.random() * 50)
-    }
   }
 }
 
 // Initialize and start worker
 const worker = new AutomationWorker()
 
-// Graceful shutdown
+// Graceful shutdown handlers
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down worker')
   await worker.cleanup()
@@ -264,6 +296,18 @@ process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down worker')
   await worker.cleanup()
   process.exit(0)
+})
+
+process.on('uncaughtException', async (error) => {
+  logger.error('Uncaught exception:', error)
+  await worker.cleanup()
+  process.exit(1)
+})
+
+process.on('unhandledRejection', async (reason, promise) => {
+  logger.error('Unhandled rejection at:', promise, 'reason:', reason)
+  await worker.cleanup()
+  process.exit(1)
 })
 
 // Start worker
