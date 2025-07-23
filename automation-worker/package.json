@@ -9,19 +9,22 @@
     "test": "jest"
   },
   "dependencies": {
-    "playwright": "^1.40.1",
+    "playwright": "^1.40.0",
     "playwright-stealth": "^1.0.6",
     "amqplib": "^0.10.3",
     "redis": "^4.6.11",
-    "winston": "^3.11.0",
+    "winston": "^3.3.3",
     "dotenv": "^16.3.1",
-    "uuid": "^9.0.1",
-    "axios": "^1.6.2",
-    "cheerio": "^1.0.0-rc.12",
-    "user-agents": "^1.0.1499"
+    "uuid": "^9.0.0",
+    "axios": "^1.5.0",
+    "cheerio": "^1.0.0-rc.10",
+    "user-agents": "^1.0.847"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2",
-    "jest": "^29.7.0"
+    "nodemon": "^3.0.0",
+    "jest": "^29.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
