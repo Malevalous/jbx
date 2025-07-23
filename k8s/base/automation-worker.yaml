@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: automation-worker
+  namespace: jbx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: automation-worker
+  template:
+    metadata:
+      labels:
+        app: automation-worker
+    spec:
+      containers:
+      - name: automation-worker
+        image: jbx/automation-worker:latest
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: jbx-config
+              key: NODE_ENV
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: jbx-config
+              key: REDIS_URL
+        - name: RABBITMQ_URL
+          valueFrom:
+            configMapKeyRef:
+              name: jbx-config
+              key: RABBITMQ_URL
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "1Gi"
+            cpu: "800m"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            add:
+              - SYS_ADMIN

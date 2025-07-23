@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+patches:
+  - path: production-patches.yaml
+    target:
+      kind: Deployment
+      name: backend
+  - path: production-patches.yaml
+    target:
+      kind: Deployment
+      name: frontend
+  - path: production-patches.yaml
+    target:
+      kind: Deployment
+      name: automation-worker

@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jbx-config
+  namespace: jbx
+data:
+  NODE_ENV: "production"
+  REDIS_URL: "redis://redis-service:6379"
+  RABBITMQ_URL: "amqp://guest:guest@rabbitmq-service:5672"
+  FRONTEND_URL: "https://your-domain.com"
+  MAX_APPLICATIONS_PER_DAY: "50"
+  MAX_APPLICATIONS_PER_PLATFORM: "10"
+  DELAY_BETWEEN_APPLICATIONS: "60"
+  LOG_LEVEL: "info"
+  CRON_DAILY_STATUS: "0 1 * * *"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: jbx
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log notice;
+    pid /var/run/nginx.pid;
+
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        
+        sendfile on;
+        keepalive_timeout 65;
+        
+        upstream frontend {
+            server frontend-service:3000;
+        }
+        
+        upstream backend {
+            server backend-service:4000;
+        }
+        
+        server {
+            listen 80;
+            
+            location / {
+                proxy_pass http://frontend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+            }
+            
+            location /api/ {
+                proxy_pass http://backend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+            }
+        }
+    }

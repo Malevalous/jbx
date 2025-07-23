@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cover-letter-service
+  namespace: jbx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cover-letter-service
+  template:
+    metadata:
+      labels:
+        app: cover-letter-service
+    spec:
+      containers:
+      - name: cover-letter-service
+        image: jbx/cover-letter-service:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jbx-secrets
+              key: OPENAI_API_KEY
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: jbx-config
+              key: REDIS_URL
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cover-letter-service
+  namespace: jbx
+spec:
+  selector:
+    app: cover-letter-service
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP

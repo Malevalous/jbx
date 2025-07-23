@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: jbx
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: backend
+        env:
+        - name: LOG_LEVEL
+          value: "debug"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: jbx
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: automation-worker
+  namespace: jbx
+spec:
+  replicas: 1

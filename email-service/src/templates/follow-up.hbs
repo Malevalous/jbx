@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Application Follow-up</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #ffffff; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .content { line-height: 1.6; color: #333; }
+        .signature { margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <p>Dear Hiring Manager,</p>
+            
+            <p>I hope this email finds you well. I am writing to follow up on my recent application for the <strong>{{jobTitle}}</strong> position at <strong>{{companyName}}</strong>.</p>
+            
+            <p>I submitted my application on {{appliedDate}} through {{platform}} and am very enthusiastic about the opportunity to contribute to your team. After reviewing the job requirements, I believe my background and skills align well with what you're looking for.</p>
+            
+            {{#if keySkills}}
+            <p>Some key qualifications I bring include:</p>
+            <ul>
+                {{#each keySkills}}
+                <li>{{this}}</li>
+                {{/each}}
+            </ul>
+            {{/if}}
+            
+            <p>I would welcome the opportunity to discuss how my experience can benefit {{companyName}}. I'm available for a phone call or video interview at your convenience.</p>
+            
+            <p>Thank you for your time and consideration. I look forward to hearing from you.</p>
+            
+            <div class="signature">
+                <p>Best regards,</p>
+                <p><strong>{{applicantName}}</strong><br>
+                {{applicantEmail}}<br>
+                {{#if applicantPhone}}{{applicantPhone}}<br>{{/if}}
+                {{#if linkedinUrl}}<a href="{{linkedinUrl}}">LinkedIn Profile</a>{{/if}}
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

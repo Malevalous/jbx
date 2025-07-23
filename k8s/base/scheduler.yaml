@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler
+  namespace: jbx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduler
+  template:
+    metadata:
+      labels:
+        app: scheduler
+    spec:
+      containers:
+      - name: scheduler
+        image: jbx/scheduler:latest
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: jbx-config
+              key: NODE_ENV
+        - name: MONGODB_URL
+          value: "mongodb://jbx:$(MONGODB_PASSWORD)@mongodb-service:27017/jbx"
+        - name: POSTGRES_URL
+          value: "postgresql://jbx:$(POSTGRES_PASSWORD)@postgres-service:5432/jbx"
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: jbx-config
+              key: REDIS_URL
+        - name: RABBITMQ_URL
+          valueFrom:
+            configMapKeyRef:
+              name: jbx-config
+              key: RABBITMQ_URL
+        - name: CRON_DAILY_STATUS
+          valueFrom:
+            configMapKeyRef:
+              name: jbx-config
+              key: CRON_DAILY_STATUS
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jbx-secrets
+              key: POSTGRES_PASSWORD
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jbx-secrets
+              key: MONGODB_PASSWORD
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "400m"

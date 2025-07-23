@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- namespace.yaml
+- configmap.yaml
+- secrets.yaml
+- postgres.yaml
+- mongodb.yaml
+- redis.yaml
+- rabbitmq.yaml
+- backend.yaml
+- frontend.yaml
+- automation-worker.yaml
+- cover-letter-service.yaml
+- email-service.yaml
+- scheduler.yaml
+- nginx.yaml
+- ingress.yaml
+
+commonLabels:
+  app: jbx-job-automation
+  version: v1.0.0
+
+images:
+- name: jbx/backend
+  newTag: latest
+- name: jbx/frontend
+  newTag: latest
+- name: jbx/automation-worker
+  newTag: latest
+- name: jbx/cover-letter-service
+  newTag: latest
+- name: jbx/email-service
+  newTag: latest
+- name: jbx/scheduler
+  newTag: latest

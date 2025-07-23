@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jbx
+  labels:
+    name: jbx
+    app: jbx-job-automation
