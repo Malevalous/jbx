@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import Login from './components/Auth/Login'
+import Register from './components/Auth/Register'
 import Dashboard from './components/Dashboard/Dashboard'
 import Applications from './components/Applications/Applications'
 import Platforms from './components/Platforms/Platforms'
@@ -12,7 +13,9 @@ import './App.css'
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
   
-  if (loading) return <div>Loading...</div>
+  if (loading) return <div className="flex justify-center items-center h-screen">
+    <div className="loading-spinner"></div>
+  </div>
   if (!user) return <Navigate to="/login" />
   
   return children
@@ -23,6 +26,7 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/" element={
           <ProtectedRoute>
             <Layout>
